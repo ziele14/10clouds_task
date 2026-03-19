@@ -1,12 +1,13 @@
 import json
 
+import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# create a .env file with an OpenAI key inside
+# Load environment variables
 load_dotenv()
 
-# initialize the client
+# Initialize the client
 client = OpenAI()
 
 
@@ -48,9 +49,20 @@ def extract_application_data(unstructured_text):
         return {"error": str(e)}
 
 
-# mock data created by an LLM
-mock_email_body = """
-Hello FinServe team,
+# quick Streamlit app
+st.set_page_config(page_title="FinServe Data Extractor", page_icon="🏦", layout="wide")
+
+st.title("FinServe: Automated Application Extractor")
+st.markdown(
+    "This tool reads unstructured emails and portal submissions, automatically extracting the required data into JSON for our Core Banking System."
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Incoming Application (Email/Portal)")
+
+    mock_email_body = """Hello FinServe team,
 
 My name is Sarah Jenkins and I am the CEO of TechFlow Solutions Ltd. We are looking to 
 apply for a line of credit. Our company registration number is 88472910. 
@@ -62,15 +74,22 @@ year was roughly $450,000.
 Please let me know what the next steps are to get this approved and into your core system.
 
 Best,
-Sarah
-"""
+Sarah"""
 
-# run the whole thing using python main.py command
-if __name__ == "__main__":
-    print("Processing incoming application...")
-    print("-" * 40)
+    user_input = st.text_area(
+        "Paste unstructured text here:", value=mock_email_body, height=300
+    )
+    process_button = st.button("Extract Data", type="primary")
 
-    structured_result = extract_application_data(mock_email_body)
+with col2:
+    st.subheader("Structured Output (JSON)")
 
-    print("Extraction Complete. Outputting structured JSON for Core Banking System:")
-    print(json.dumps(structured_result, indent=4))
+    if process_button:
+        with st.spinner("AI is analyzing the text..."):
+            structured_result = extract_application_data(user_input)
+
+            if "error" in structured_result:
+                st.error(f"Extraction failed: {structured_result['error']}")
+            else:
+                st.success("Extraction Complete!")
+                st.json(structured_result)
